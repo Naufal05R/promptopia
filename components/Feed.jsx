@@ -5,17 +5,22 @@ import PromptCard from './PromptCard';
 
 const PromptCardList = ({ data, handleTagClick }) => (
   <div className='mt-16 prompt_layout'>
-    {data.map(post => (
-      <PromptCard key={post.id} post={post} handleTagClick={handleTagClick} />
+    {data.map((post) => (
+      <PromptCard
+        key={post.id}
+        post={post}
+        handleTagClick={handleTagClick}
+      />
     ))}
   </div>
 );
 
 const Feed = () => {
-  const [searchText, setSearchText] = useState('');
   const [posts, setPosts] = useState([]);
 
-  const handleSearchChange = (e) => {};
+  const [searchText, setSearchText] = useState('');
+  const [searchTimeout, setSearchTimeout] = useState(null);
+  const [searchedResults, setSearchedResults] = useState([]);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -27,6 +32,36 @@ const Feed = () => {
 
     fetchPosts();
   }, []);
+
+  const filteredPrompts = (searchText) => {
+    const regex = new RegExp(searchText, 'i');
+
+    return posts.filter(
+      (post) =>
+        regex.test(post.creator.username) ||
+        regex.test(post.tag) ||
+        regex.test(post.prompt)
+    );
+  };
+
+  const handleSearchChange = (e) => {
+    clearTimeout(searchTimeout);
+    setSearchText(e.target.value);
+
+    setSearchTimeout(
+      setTimeout(() => {
+        const searchResults = filteredPrompts(e.target.value);
+        setSearchedResults(searchResults);
+      }, 500)
+    );
+  };
+
+  const handleTagClick = (tagLabel) => {
+    setSearchText(tagLabel);
+
+    const searchResults = filteredPrompts(tagLabel);
+    setSearchedResults(searchResults);
+  };
 
   return (
     <section className='feed'>
@@ -41,10 +76,17 @@ const Feed = () => {
         />
       </form>
 
-      <PromptCardList
-        data={posts}
-        handleTagClick={() => {}}
-      />
+      {searchText ? (
+        <PromptCardList
+          data={searchedResults}
+          handleTagClick={handleTagClick}
+        />
+      ) : (
+        <PromptCardList
+          data={posts}
+          handleTagClick={handleTagClick}
+        />
+      )}
     </section>
   );
 };
